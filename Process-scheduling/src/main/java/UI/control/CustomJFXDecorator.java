@@ -15,9 +15,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 
-/**
- * Created by Snart Lu on 2018/2/5. <br/>
- */
 public class CustomJFXDecorator extends JFXDecorator {
     public CustomJFXDecorator(Stage stage, Node node) {
         this(stage, node, true, true, true);

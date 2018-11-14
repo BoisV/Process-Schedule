@@ -4,9 +4,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
 
-/**
- * Created by Snart Lu on 2018/2/5.
- */
+
 public class EventBus {
     private static final EventBus INSTANCE = new EventBus();
 

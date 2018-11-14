@@ -6,14 +6,20 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
 
 public class ProcessBar extends HBox {
+    private String pid;
     private Label label;
     private ProgressBar progressBar;
 
-    public ProcessBar(String label, DoubleProperty DoubleProperty) {
+    public ProcessBar(String pid, DoubleProperty DoubleProperty) {
         super(5);
-        this.label = new Label(label);
+        this.pid = pid;
+        this.label = new Label(pid);
         this.progressBar = new ProgressBar();
         this.progressBar.progressProperty().bind(DoubleProperty);
         super.getChildren().addAll(this.label, this.progressBar);
+    }
+
+    public String getPid() {
+        return pid;
     }
 }

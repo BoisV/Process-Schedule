@@ -31,10 +31,6 @@ public class MainController {
     private MenuItem author;
     @FXML
     private MenuItem process_schedule;
-//    @FXML
-//    private MenuItem save;
-
-//    private BooleanProperty saveDisable = new SimpleBooleanProperty();
 
     @PostConstruct
     public void init() throws FlowException {
@@ -54,25 +50,21 @@ public class MainController {
         JavaFxObservable.actionEventsOf(author).subscribe(actionEvent -> {
             if (!(flowHandler.getCurrentView().getViewContext().getController() instanceof AuthorController)) {
                 flowHandler.handle(author.getId());
-//                saveDisable.setValue(Boolean.TRUE);
+
             }
         });
         JavaFxObservable.actionEventsOf(process_schedule).subscribe(actionEvent -> {
             if (!(flowHandler.getCurrentView().getViewContext().getController() instanceof BodyController)) {
                 flowHandler.handle(process_schedule.getId());
-//                saveDisable.setValue(Boolean.FALSE);
+
             }
         });
-//        JavaFxObservable.actionEventsOf(save).subscribe(actionEvent -> {
-//            EventBus.getInstance().postSave(new Event(Event.EventType.SAVE));
-//        });
+
 
         // bind menu to view in flow
         bindMenuToController(author, AuthorController.class, innerFlow);
         bindMenuToController(process_schedule, BodyController.class, innerFlow);
 
-//        saveDisable.setValue(Boolean.TRUE);
-//        save.disableProperty().bindBidirectional(saveDisable);
     }
 
     private void bindMenuToController(MenuItem menu, Class<?> controllerClass, Flow flow) {

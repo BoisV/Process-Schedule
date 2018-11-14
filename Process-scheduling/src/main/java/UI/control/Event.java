@@ -1,8 +1,6 @@
 package UI.control;
 
-/**
- * Created by Snart Lu on 2018/2/5.
- */
+
 public class Event {
     private EventType type;
 

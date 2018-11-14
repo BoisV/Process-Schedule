@@ -18,9 +18,7 @@ import javafx.util.Duration;
 import java.util.List;
 import java.util.function.Function;
 
-/**
- * A {@link FlowContainer} that supports animation for the view change.
- */
+
 public class ExtendedAnimatedFlowContainer extends AnimatedFlowContainer implements FlowContainer<StackPane> {
 
     private final StackPane view;

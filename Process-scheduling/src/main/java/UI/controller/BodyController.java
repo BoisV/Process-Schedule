@@ -8,10 +8,7 @@ import io.datafx.controller.flow.context.FXMLViewFlowContext;
 import io.datafx.controller.flow.context.ViewFlowContext;
 import javafx.beans.property.DoubleProperty;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 
@@ -23,9 +20,6 @@ public class BodyController {
     private ViewFlowContext context;
 
     @FXML
-    private BorderPane root;
-
-    @FXML
     private Text numOfProcesses, numOfWait, numOfEnd, time;
 
     @FXML
@@ -35,13 +29,18 @@ public class BodyController {
     private JFXRadioButton fcfs, rr, srtf, spf, psa;
 
     @FXML
-    private Button start, insert, stop, goON, reset;
+    private Button start, insert, reset;
 
     @FXML
     private VBox list1, list2, list3;
 
-    private CPU cpu;
+    @FXML
+    private TextArea log;
 
+    private static boolean isNotFull_1 = true, isNotFull_2 = true;
+    private boolean isBegin = false;
+
+    private CPU cpu;
     private static final int TYPE_FCFS = 0;
     private static final int TYPE_RR = 1;
     private static final int TYPE_SRTF = 2;
@@ -50,43 +49,42 @@ public class BodyController {
 
     @PostConstruct
     public void init() {
-        cpu = new CPU();
+        cpu = new CPU(list1,list2,list3);
         bindCPUInfoToControls();
-        addProcessBarsTo(cpu, list1);
 
         start.setOnMouseClicked(event -> {
-            new Thread(cpu::start).start();
+            if (!isBegin) {
+                isBegin = true;
+                new Thread(cpu::start).start();
+                start.setText("停止");
+                reset.setVisible(false);
+            }else{
+                isBegin = false;
+                new Thread(cpu::stop).start();
+                start.setText("运行");
+                reset.setVisible(true);
+            }
         });
 
         insert.setOnMouseClicked(event -> {
             Thread thread = new Thread(cpu::insert);
             thread.start();
+        });
+
+        reset.setOnMouseClicked(event -> {
+            Thread thread = new Thread(cpu::reset);
+            thread.start();
+            list1.getChildren().clear();
+            list2.getChildren().clear();
+            list3.getChildren().clear();
+            isNotFull_1 = true;
+            isNotFull_2 = true;
             try {
                 thread.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            String pid = cpu.getProcesses().get(cpu.getProcesses().size()-1).getPcb().getPid();
-            DoubleProperty doubleProperty = cpu.getProcesses().get(cpu.getProcesses().size()-1).scheduleProperty();
-            ProcessBar processBar = new ProcessBar(pid, doubleProperty);
-            list1.getChildren().add(processBar);
         });
-
-        stop.setOnMouseClicked(event -> {
-            new Thread(cpu::stop).start();
-        });
-
-        goON.setOnMouseClicked(event -> {
-            new Thread(cpu::goON).start();
-        });
-
-        reset.setOnMouseClicked(event -> {
-            new Thread(cpu::reset).start();
-            cpu.reset();
-            list1.getChildren().clear();
-            addProcessBarsTo(cpu, list1);
-        });
-
     }
 
     private static void addProcessBarsTo(CPU cpu, VBox list1) {
@@ -98,7 +96,7 @@ public class BodyController {
         }
     }
 
-    private void bindCPUInfoToControls(){
+    private void bindCPUInfoToControls() {
         fcfs.setUserData(TYPE_FCFS);
         rr.setUserData(TYPE_RR);
         srtf.setUserData(TYPE_SRTF);
@@ -108,12 +106,12 @@ public class BodyController {
         cpu.typeProperty().addListener(((observable, oldValue, newValue) -> {
             Toggle selected = null;
             for (Toggle toggle : typeGroup.getToggles()) {
-                if (newValue == toggle.getUserData()){
+                if (newValue == toggle.getUserData()) {
                     selected = toggle;
                     break;
                 }
             }
-            if (selected == null){
+            if (selected == null) {
                 throw new IllegalArgumentException("CPU info set type value which is not in toggle values");
 
             }
@@ -127,8 +125,22 @@ public class BodyController {
         numOfWait.textProperty().bind(cpu.numOfWaitProperty());
         numOfEnd.textProperty().bind(cpu.numOfEndProperty());
         time.textProperty().bind(cpu.str_timeProperty());
+        log.textProperty().bind(cpu.logProperty());
     }
 
+    public static boolean isIsNotFull_1() {
+        return isNotFull_1;
+    }
 
+    public static void setIsNotFull_1(boolean isNotFull_1) {
+        BodyController.isNotFull_1 = isNotFull_1;
+    }
 
+    public static boolean isIsNotFull_2() {
+        return isNotFull_2;
+    }
+
+    public static void setIsNotFull_2(boolean isNotFull_2) {
+        BodyController.isNotFull_2 = isNotFull_2;
+    }
 }

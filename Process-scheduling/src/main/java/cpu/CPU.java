@@ -1,12 +1,20 @@
 package cpu;
 
+import UI.controller.BodyController;
+import util.ComparatorByPri;
+import util.ComparatorByTime;
+import util.MyQueue;
+import UI.util.ProcessBar;
+import javafx.application.Platform;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.Node;
+import javafx.scene.layout.VBox;
 import process.Process;
 import util.Status;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static util.ProcessUtil.*;
 
@@ -19,36 +27,54 @@ public class CPU {
     private static int CPU = 1;
     private int time;
     private List<Process> processes;
-    private List<Integer> waitQueue;
+    private Collection<Integer> waitQueue;
     private SimpleStringProperty numOfProcesses = new SimpleStringProperty();
     private SimpleStringProperty numOfWait = new SimpleStringProperty();
     private SimpleStringProperty numOfEnd = new SimpleStringProperty();
     private SimpleStringProperty str_time = new SimpleStringProperty();
     private SimpleIntegerProperty type = new SimpleIntegerProperty();
+    private SimpleStringProperty log = new SimpleStringProperty();
     private int count;
     private boolean flag = true;
     private int front;
-    private int tail;
     private int running;
-    //    private boolean reset;
+    private boolean reset = true;
+    private VBox[] lists;
+
+    public CPU(VBox... lists) {
+        this.lists = lists;
+        this.processes = createProcesses(10);
+        addLog("已初始化十个进程\n");
+        this.count = processes.size();
+        this.numOfProcesses.set(Integer.toString(processes.size()));
+        this.numOfWait.setValue("0");
+        this.numOfEnd.setValue("0");
+        this.str_time.setValue("0");
+        this.time = 0;
+        this.front = 0;
+        this.running = 0;
+    }
 
     public CPU() {
         this.processes = createProcesses(10);
         this.count = processes.size();
-        numOfProcesses.set(Integer.toString(processes.size()));
-        numOfWait.setValue("0");
-        numOfEnd.setValue("0");
-        str_time.setValue("0");
+        this.numOfProcesses.set(Integer.toString(processes.size()));
+        this.numOfWait.setValue("0");
+        this.numOfEnd.setValue("0");
+        this.str_time.setValue("0");
         this.time = 0;
-        front = 0;
-        tail = 0;
-        running = 0;
-        waitQueue = new ArrayList<>();
+        this.front = 0;
+        this.running = 0;
     }
 
 
     public void start() {
         this.flag = true;
+        if (reset) {
+            newWaitQueue();
+            reset = false;
+        }
+        addLog("模拟进程调度开始");
         switch (type.get()) {
             case 0:
                 fcfs();
@@ -71,7 +97,8 @@ public class CPU {
     public void insert() {
         int time = this.time;
         Process process = createProcess();
-        process.getPcb().setArrive_time(process.getArrive_time() + time + 10);
+        process.getPcb().setArrive_time(process.getArrive_time() + time);
+        addLog("新建一个线程" + process.getPid() + " 到达时间" + process.getArrive_time());
         processes.add(process);
         this.count += 1;
         numOfProcesses.set(Integer.toString(processes.size()));
@@ -79,14 +106,13 @@ public class CPU {
 
     public void stop() {
         this.flag = false;
-    }
-
-    public void goON() {
-        this.flag = true;
+        addLog("调度暂停");
     }
 
     public void reset() {
+        log.setValue("重置进程池\n");
         this.processes = createProcesses(10);
+        addLog("已初始化十个线程");
         this.count = processes.size();
         numOfProcesses.set(Integer.toString(processes.size()));
         numOfWait.setValue("0");
@@ -94,10 +120,73 @@ public class CPU {
         str_time.setValue("0");
         this.time = 0;
         front = 0;
-        tail = 0;
         running = 0;
-        waitQueue = new ArrayList<>();
         CPU = 1;
+        reset = true;
+    }
+
+    private void newWaitQueue() {
+        switch (type.get()) {
+            case 0:
+                waitQueue = new LinkedList<>();
+                break;
+            case 1:
+                waitQueue = new LinkedList<>();
+                break;
+            case 2:
+                waitQueue = new MyQueue<>();
+                break;
+            case 3:
+                waitQueue = new MyQueue<>();
+                break;
+            case 4:
+                waitQueue = new MyQueue<>();
+                break;
+        }
+    }
+
+    private void addProcessBar(Process process) {
+        Platform.runLater(() -> {
+            String pid = process.getPid();
+            DoubleProperty doubleProperty = process.scheduleProperty();
+            ProcessBar processBar = new ProcessBar(pid, doubleProperty);
+            if (BodyController.isIsNotFull_1()) {
+                lists[0].getChildren().add(processBar);
+                if (lists[0].getChildren().size() == 13)
+                    BodyController.setIsNotFull_1(false);
+            } else if (BodyController.isIsNotFull_2()) {
+                lists[1].getChildren().add(processBar);
+                if (lists[1].getChildren().size() == 13)
+                    BodyController.setIsNotFull_2(false);
+            } else {
+                lists[2].getChildren().add(processBar);
+            }
+        });
+    }
+
+    private void removeProcessBar(Process process){
+        Platform.runLater(() -> {
+            boolean flag = false;
+            for (VBox list : lists) {
+                for (Node node: list.getChildren()) {
+                    if (((ProcessBar)node).getPid().equals(process.getPid())){
+                        list.getChildren().remove(node);
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag)
+                    break;
+            }
+        });
+    }
+
+    private void addLog(String str){
+        if (log.getValue() != null)
+            log.setValue(log.getValue() + str + "\n");
+        else
+            log.setValue(str);
+        System.out.println(str);
     }
 
 
@@ -109,35 +198,35 @@ public class CPU {
     public void fcfs() {
         sortByPri(processes);
         showProcesses(processes);
-
-
-        System.out.println("-------------FCFS算法-------------");
+        addLog("-------------FCFS算法-------------");
         if (count <= 0) {
-            System.out.println("无可用进程");
-            return;
+            addLog("无可用进程");
         }
         while (flag) {
             for (int i = 0; i < processes.size(); i++) {
                 if (processes.get(i).isReady() && processes.get(i).getArrive_time() == time) {
-                    System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(i).getPcb().getPid() + " 到来 ");
-                    waitQueue.add(i);
-                    tail = (tail + 1) % processes.size();
+                    addLog("第 " + time + " 秒: " + "进程 " + processes.get(i).getPid() + " 到来 ");
+                    addProcessBar(processes.get(i));
+                    ((LinkedList<Integer>) waitQueue).offer(i);
+                    numOfWait.setValue(Integer.toString(waitQueue.size()));
                 }
             }
             if (processes.get(running).isRunnable() && processes.get(running).getTime() == 0) {
-                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 结束运行 ");
+                addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 结束运行 ");
                 processes.get(running).setStatus(Status.END);
+                removeProcessBar(processes.get(running));
                 count--;
+                numOfEnd.setValue(Integer.toString(processes.size() - count));
                 CPU = 1;
             }
             if (count == 0) {
                 timePass();
                 continue;
             }
-            if (CPU == 1 && front != tail) {
-                running = waitQueue.get(front);
-                front = (front + 1) % processes.size();
-                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 开始运行");
+            if (CPU == 1 && !waitQueue.isEmpty()) {
+                running = ((LinkedList<Integer>) waitQueue).poll();
+                numOfWait.setValue(Integer.toString(waitQueue.size()));
+                addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 开始运行");
                 processes.get(running).setStatus(Status.RUNNABLE);
                 processes.get(running).work(1);
                 CPU = 0;
@@ -160,7 +249,7 @@ public class CPU {
         sortByPri(processes);
         showProcesses(processes);
         int round = 2;
-        System.out.println("-------------RR算法-------------");
+        addLog("-------------RR算法-------------");
         if (count <= 0) {
             System.out.println("无可用进程");
             return;
@@ -168,19 +257,18 @@ public class CPU {
         while (flag) {
             for (int i = 0; i < processes.size(); i++) {
                 if (processes.get(i).isReady() && processes.get(i).getArrive_time() == time) {
-                    System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(i).getName() + " 到来 ");
-                    if (waitQueue.size() < processes.size() + 1) {
-                        waitQueue.add(i);
-                    } else {
-                        waitQueue.set(tail, i);
-                    }
-                    tail = (tail + 1) % (processes.size() + 1);
+                    addLog("第 " + time + " 秒: " + "进程 " + processes.get(i).getPid() + " 到来 ");
+                    addProcessBar(processes.get(i));
+                    ((LinkedList<Integer>) waitQueue).offer(i);
+                    numOfWait.setValue(Integer.toString(waitQueue.size()));
                 }
             }
             if ((processes.get(running).isRunnable() || processes.get(running).isWait()) && processes.get(running).getTime() == 0) {
-                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 结束运行 ");
+                addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 结束运行 ");
                 processes.get(running).setStatus(Status.END);
+                removeProcessBar(processes.get(running));
                 count--;
+                numOfEnd.setValue(Integer.toString(processes.size() - count));
                 CPU = 1;
 
             }
@@ -189,30 +277,24 @@ public class CPU {
                 continue;
             }
 
-            if (CPU == 1) {
-                if (front != tail) {
-                    running = waitQueue.get(front);
-                    front = (front + 1) % (processes.size() + 1);
-                    System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 开始运行 ");
-                    while (processes.get(running).isOver()) {
-                        running = waitQueue.get(front);
-                        front = (front + 1) % (processes.size() + 1);
-                    }
-                    processes.get(running).setStatus(Status.RUNNABLE);
-                    processes.get(running).work(1);
-                    CPU = 0;
+            if (CPU == 1 && !waitQueue.isEmpty()) {
+                running = ((LinkedList<Integer>) waitQueue).poll();
+                numOfWait.setValue(Integer.toString(waitQueue.size()));
+                addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 开始运行 ");
+                while (processes.get(running).isOver() && !waitQueue.isEmpty()) {
+                    running = ((LinkedList<Integer>) waitQueue).poll();
+                    numOfWait.setValue(Integer.toString(waitQueue.size()));
                 }
+                processes.get(running).setStatus(Status.RUNNABLE);
+                processes.get(running).work(1);
+                CPU = 0;
             } else if (CPU == 0) {
                 processes.get(running).work(1);
                 if (time % round == 0) {
-                    System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 暂停运行 ");
+                    addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 暂停运行 ");
                     processes.get(running).setStatus(Status.WAIT);
-                    if (waitQueue.size() < (processes.size() + 1)) {
-                        waitQueue.add(running);
-                    } else {
-                        waitQueue.set(tail, running);
-                    }
-                    tail = (tail + 1) % (processes.size() + 1);
+                    ((LinkedList<Integer>) waitQueue).offer(running);
+                    numOfWait.setValue(Integer.toString(waitQueue.size()));
                     CPU = 1;
                 }
             }
@@ -233,58 +315,55 @@ public class CPU {
     public void srtf() {
         sortByNeedTime(processes);
         showProcesses(processes);
-        System.out.println("-------------SRTF算法-------------");
+        addLog("-------------SRTF算法-------------");
         if (count <= 0) {
-            System.out.println("无可用进程");
-            return;
+            addLog("无可用进程");
         }
 
         while (flag) {
             for (int i = 0; i < processes.size(); i++) {
                 if (processes.get(i).isReady() && processes.get(i).getArrive_time() == time) {
-                    System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(i).getName() + " 到来 ");
-                    waitQueue.add(i);
+                    addLog("第 " + time + " 秒: " + "进程 " + processes.get(i).getPid() + " 到来 ");
+                    addProcessBar(processes.get(i));
+                    ((MyQueue<Integer>) waitQueue).offer(i);
+                    numOfWait.setValue(Integer.toString(waitQueue.size()));
                 }
             }
 
 
             if (processes.get(running).isRunnable() && processes.get(running).getTime() == 0) {
-                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 结束运行 ");
+                addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 结束运行 ");
                 processes.get(running).setStatus(Status.END);
-                waitQueue.remove(0);
+                removeProcessBar(processes.get(running));
+                ((MyQueue) waitQueue).poll();
+                numOfWait.setValue(Integer.toString(waitQueue.size()));
                 count--;
+                numOfEnd.setValue(Integer.toString(processes.size() - count));
                 CPU = 1;
             }
 
-            if (count==0){
+            if (count == 0) {
                 timePass();
                 continue;
             }
 
             if (waitQueue.size() == 1) {
-                front = waitQueue.get(0);
+                front = ((MyQueue<Integer>) waitQueue).peek();
             } else if (waitQueue.size() > 1) {
-                waitQueue.sort((o1, o2) -> {
-                    if (processes.get(o1).getTime() < processes.get(o2).getTime())
-                        return -1;
-                    else if (processes.get(o1).getTime() == processes.get(o2).getTime())
-                        return 0;
-                    else
-                        return 1;
-                });
-                if (front != waitQueue.get(0)) {
+                ((MyQueue<Integer>) waitQueue).sort(new ComparatorByTime(processes));
+                if (front != ((MyQueue<Integer>) waitQueue).peek()) {
                     if (processes.get(running).isRunnable()) {
                         processes.get(running).setStatus(Status.WAIT);
-                        System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 暂停运行 ");
+                        addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 暂停运行 ");
                     }
-                    front = waitQueue.get(0);
+                    front = ((MyQueue<Integer>) waitQueue).peek();
                     CPU = 1;
                 }
             }
 
             if (CPU == 1 && !waitQueue.isEmpty()) {
                 running = front;
-                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 开始运行");
+                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 开始运行");
                 processes.get(running).setStatus(Status.RUNNABLE);
                 processes.get(running).work(1);
                 CPU = 0;
@@ -307,44 +386,46 @@ public class CPU {
     public void spf() {
         sortByNeedTime(processes);
         showProcesses(processes);
-        System.out.println("-------------SPF算法-------------");
+        addLog("-------------SPF算法-------------");
         if (count <= 0) {
-            System.out.println("无可用进程");
-            return;
+            addLog("无可用进程");
         }
 
         while (flag) {
             for (int i = 0; i < processes.size(); i++) {
                 if (processes.get(i).isReady() && processes.get(i).getArrive_time() == time) {
-                    System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(i).getName() + " 到来 ");
-                    waitQueue.add(i);
+                    addLog("第 " + time + " 秒: " + "进程 " + processes.get(i).getPid() + " 到来 ");
+                    addProcessBar(processes.get(i));
+                    ((MyQueue<Integer>) waitQueue).offer(i);
+                    numOfWait.setValue(Integer.toString(waitQueue.size()));
                 }
             }
 
 
             if (processes.get(running).isRunnable() && processes.get(running).getTime() == 0) {
-                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 结束运行 ");
+                addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 结束运行 ");
                 processes.get(running).setStatus(Status.END);
-                waitQueue.remove(0);
+                removeProcessBar(processes.get(running));
+                ((MyQueue<Integer>) waitQueue).poll();
+                numOfWait.setValue(Integer.toString(waitQueue.size()));
                 count--;
+                numOfEnd.setValue(Integer.toString(processes.size() - count));
                 CPU = 1;
+            }
+
+            if (count == 0) {
+                timePass();
+                continue;
             }
 
 
             if (CPU == 1 && waitQueue.size() >= 2) {
-                waitQueue.sort((o1, o2) -> {
-                    if (processes.get(o1).getTime() < processes.get(o2).getTime())
-                        return -1;
-                    else if (processes.get(o1).getTime() == processes.get(o2).getTime())
-                        return 0;
-                    else
-                        return 1;
-                });
+                ((MyQueue<Integer>) waitQueue).sort(new ComparatorByTime(this.processes));
             }
 
             if (CPU == 1 && !waitQueue.isEmpty()) {
-                running = waitQueue.get(0);
-                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 开始运行");
+                running = ((MyQueue<Integer>) waitQueue).peek();
+                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 开始运行");
                 processes.get(running).setStatus(Status.RUNNABLE);
                 processes.get(running).work(1);
                 CPU = 0;
@@ -366,54 +447,56 @@ public class CPU {
     public void psa() {
         sortByPri(processes);
         showProcesses(processes);
-        System.out.println("-------------PSA算法-------------");
+        addLog("-------------PSA算法-------------");
         if (count <= 0) {
-            System.out.println("无可用进程");
-            return;
+            addLog("无可用进程");
         }
 
         while (flag) {
             for (int i = 0; i < processes.size(); i++) {
                 if (processes.get(i).isReady() && processes.get(i).getArrive_time() == time) {
-                    System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(i).getName() + " 到来 ");
-                    waitQueue.add(i);
+                    addLog("第 " + time + " 秒: " + "进程 " + processes.get(i).getPid() + " 到来 ");
+                    addProcessBar(processes.get(i));
+                    ((MyQueue<Integer>) waitQueue).offer(i);
+                    numOfWait.setValue(Integer.toString(waitQueue.size()));
                 }
             }
 
 
             if (processes.get(running).isRunnable() && processes.get(running).getTime() == 0) {
-                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 结束运行 ");
+                addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 结束运行 ");
                 processes.get(running).setStatus(Status.END);
-                waitQueue.remove(0);
+                removeProcessBar(processes.get(running));
+                ((MyQueue<Integer>) waitQueue).poll();
+                numOfWait.setValue(Integer.toString(waitQueue.size()));
                 count--;
+                numOfEnd.setValue(Integer.toString(processes.size() - count));
                 CPU = 1;
+            }
+
+            if (count == 0) {
+                timePass();
+                continue;
             }
 
 
             if (waitQueue.size() == 1) {
-                front = waitQueue.get(0);
+                front = ((MyQueue<Integer>) waitQueue).peek();
             } else if (waitQueue.size() > 1) {
-                waitQueue.sort((o1, o2) -> {
-                    if (processes.get(o1).getPri() > processes.get(o2).getPri())
-                        return -1;
-                    else if (processes.get(o1).getPri() == processes.get(o2).getPri())
-                        return 0;
-                    else
-                        return 1;
-                });
-                if (front != waitQueue.get(0)) {
+                ((MyQueue<Integer>) waitQueue).sort(new ComparatorByPri(this.processes));
+                if (front != ((MyQueue<Integer>) waitQueue).peek()) {
                     if (processes.get(running).isRunnable()) {
                         processes.get(running).setStatus(Status.WAIT);
-                        System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 暂停运行 ");
+                        addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 暂停运行 ");
                     }
-                    front = waitQueue.get(0);
+                    front = ((MyQueue<Integer>) waitQueue).peek();
                     CPU = 1;
                 }
             }
 
             if (CPU == 1 && !waitQueue.isEmpty()) {
                 running = front;
-                System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 开始运行");
+                addLog("第 " + time + " 秒: " + "进程 " + processes.get(running).getPid() + " 开始运行");
                 processes.get(running).setStatus(Status.RUNNABLE);
                 processes.get(running).work(1);
                 processes.get(running).setPri(processes.get(running).getPri() - 1);
@@ -469,4 +552,7 @@ public class CPU {
         return str_time;
     }
 
+    public SimpleStringProperty logProperty() {
+        return log;
+    }
 }

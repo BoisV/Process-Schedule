@@ -17,7 +17,7 @@ public class Process {
 
     public void work(long time) {
         work_time += time;
-        schedule.setValue((double)work_time / pcb.getNeed_time());
+        schedule.setValue((double) work_time / pcb.getNeed_time());
     }
 
     public boolean isRunnable() {
@@ -88,6 +88,10 @@ public class Process {
 
     public void setSchedule(double schedule) {
         this.schedule.set(schedule);
+    }
+
+    public String getPid() {
+        return this.pcb.getPid();
     }
 
     @Override
