@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<StackPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox alignment="CENTER">
+        <Label textFill="#3e8080">进程调度演示</Label>
+        <Label textFill="#3e8080">作者：穆鸿书</Label>
+        <Label textFill="#3e8080">华南农业大学2016级计算机科学与技术1班</Label>
+    </VBox>
+</StackPane>
