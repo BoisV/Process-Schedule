@@ -59,7 +59,13 @@ public class BodyController {
         });
 
         insert.setOnMouseClicked(event -> {
-            new Thread(cpu::insert).start();
+            Thread thread = new Thread(cpu::insert);
+            thread.start();
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             String pid = cpu.getProcesses().get(cpu.getProcesses().size()-1).getPcb().getPid();
             DoubleProperty doubleProperty = cpu.getProcesses().get(cpu.getProcesses().size()-1).scheduleProperty();
             ProcessBar processBar = new ProcessBar(pid, doubleProperty);
@@ -75,7 +81,7 @@ public class BodyController {
         });
 
         reset.setOnMouseClicked(event -> {
-//            new Thread(cpu::reset).start();
+            new Thread(cpu::reset).start();
             cpu.reset();
             list1.getChildren().clear();
             addProcessBarsTo(cpu, list1);
@@ -122,5 +128,7 @@ public class BodyController {
         numOfEnd.textProperty().bind(cpu.numOfEndProperty());
         time.textProperty().bind(cpu.str_timeProperty());
     }
+
+
 
 }

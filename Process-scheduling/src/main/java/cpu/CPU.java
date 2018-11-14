@@ -16,8 +16,8 @@ public class CPU {
      * 1: 空闲
      * 0: 正被占用
      */
-    static int CPU = 1;
-    private int time = 0;
+    private static int CPU = 1;
+    private int time;
     private List<Process> processes;
     private List<Integer> waitQueue;
     private SimpleStringProperty numOfProcesses = new SimpleStringProperty();
@@ -27,10 +27,12 @@ public class CPU {
     private SimpleIntegerProperty type = new SimpleIntegerProperty();
     private int count;
     private boolean flag = true;
-//    private boolean reset;
+    private int front;
+    private int tail;
+    private int running;
+    //    private boolean reset;
 
     public CPU() {
-        this.flag = true;
         this.processes = createProcesses(10);
         this.count = processes.size();
         numOfProcesses.set(Integer.toString(processes.size()));
@@ -38,6 +40,10 @@ public class CPU {
         numOfEnd.setValue("0");
         str_time.setValue("0");
         this.time = 0;
+        front = 0;
+        tail = 0;
+        running = 0;
+        waitQueue = new ArrayList<>();
     }
 
 
@@ -65,11 +71,10 @@ public class CPU {
     public void insert() {
         int time = this.time;
         Process process = createProcess();
-        process.getPcb().setArrive_time(process.getArrive_time() + time);
+        process.getPcb().setArrive_time(process.getArrive_time() + time + 10);
         processes.add(process);
         this.count += 1;
         numOfProcesses.set(Integer.toString(processes.size()));
-
     }
 
     public void stop() {
@@ -81,7 +86,6 @@ public class CPU {
     }
 
     public void reset() {
-        this.flag = false;
         this.processes = createProcesses(10);
         this.count = processes.size();
         numOfProcesses.set(Integer.toString(processes.size()));
@@ -89,6 +93,11 @@ public class CPU {
         numOfEnd.setValue("0");
         str_time.setValue("0");
         this.time = 0;
+        front = 0;
+        tail = 0;
+        running = 0;
+        waitQueue = new ArrayList<>();
+        CPU = 1;
     }
 
 
@@ -100,11 +109,8 @@ public class CPU {
     public void fcfs() {
         sortByPri(processes);
         showProcesses(processes);
-//        int MAXLEN = processes.size();
-        waitQueue = new ArrayList<>();
-        int front = 0;
-        int tail = 0;
-        int running = 0;
+
+
         System.out.println("-------------FCFS算法-------------");
         if (count <= 0) {
             System.out.println("无可用进程");
@@ -124,7 +130,10 @@ public class CPU {
                 count--;
                 CPU = 1;
             }
-
+            if (count == 0) {
+                timePass();
+                continue;
+            }
             if (CPU == 1 && front != tail) {
                 running = waitQueue.get(front);
                 front = (front + 1) % processes.size();
@@ -136,19 +145,9 @@ public class CPU {
                 processes.get(running).work(1);
             }
             timePass();
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
         System.out.println("---------------------------------");
         showProcesses(processes);
-    }
-
-    private void timePass() {
-        time++;
-        str_time.setValue(Integer.toString(time));
     }
 
     /**
@@ -160,27 +159,22 @@ public class CPU {
     public void rr() {
         sortByPri(processes);
         showProcesses(processes);
-        int MAXLEN = processes.size() + 1;
-        waitQueue = new ArrayList<>();
-        int front = 0;
-        int tail = 0;
-        int running = 0;
         int round = 2;
         System.out.println("-------------RR算法-------------");
         if (count <= 0) {
             System.out.println("无可用进程");
             return;
         }
-        while (count > 0) {
+        while (flag) {
             for (int i = 0; i < processes.size(); i++) {
                 if (processes.get(i).isReady() && processes.get(i).getArrive_time() == time) {
                     System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(i).getName() + " 到来 ");
-                    if (waitQueue.size() < MAXLEN) {
+                    if (waitQueue.size() < processes.size() + 1) {
                         waitQueue.add(i);
                     } else {
                         waitQueue.set(tail, i);
                     }
-                    tail = (tail + 1) % MAXLEN;
+                    tail = (tail + 1) % (processes.size() + 1);
                 }
             }
             if ((processes.get(running).isRunnable() || processes.get(running).isWait()) && processes.get(running).getTime() == 0) {
@@ -188,17 +182,21 @@ public class CPU {
                 processes.get(running).setStatus(Status.END);
                 count--;
                 CPU = 1;
-                if (count == 0)
-                    break;
+
             }
+            if (count == 0) {
+                timePass();
+                continue;
+            }
+
             if (CPU == 1) {
                 if (front != tail) {
                     running = waitQueue.get(front);
-                    front = (front + 1) % MAXLEN;
+                    front = (front + 1) % (processes.size() + 1);
                     System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 开始运行 ");
                     while (processes.get(running).isOver()) {
                         running = waitQueue.get(front);
-                        front = (front + 1) % MAXLEN;
+                        front = (front + 1) % (processes.size() + 1);
                     }
                     processes.get(running).setStatus(Status.RUNNABLE);
                     processes.get(running).work(1);
@@ -209,21 +207,17 @@ public class CPU {
                 if (time % round == 0) {
                     System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(running).getName() + " 暂停运行 ");
                     processes.get(running).setStatus(Status.WAIT);
-                    if (waitQueue.size() < MAXLEN) {
+                    if (waitQueue.size() < (processes.size() + 1)) {
                         waitQueue.add(running);
                     } else {
                         waitQueue.set(tail, running);
                     }
-                    tail = (tail + 1) % MAXLEN;
+                    tail = (tail + 1) % (processes.size() + 1);
                     CPU = 1;
                 }
             }
             timePass();
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+
         }
         System.out.println("---------------------------------");
         showProcesses(processes);
@@ -239,16 +233,13 @@ public class CPU {
     public void srtf() {
         sortByNeedTime(processes);
         showProcesses(processes);
-        waitQueue = new ArrayList<>();
-        int front = 0;
-        int running = 0;
         System.out.println("-------------SRTF算法-------------");
         if (count <= 0) {
             System.out.println("无可用进程");
             return;
         }
 
-        while (count > 0) {
+        while (flag) {
             for (int i = 0; i < processes.size(); i++) {
                 if (processes.get(i).isReady() && processes.get(i).getArrive_time() == time) {
                     System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(i).getName() + " 到来 ");
@@ -265,6 +256,10 @@ public class CPU {
                 CPU = 1;
             }
 
+            if (count==0){
+                timePass();
+                continue;
+            }
 
             if (waitQueue.size() == 1) {
                 front = waitQueue.get(0);
@@ -297,11 +292,6 @@ public class CPU {
                 processes.get(running).work(1);
             }
             timePass();
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
         System.out.println("---------------------------------");
 
@@ -317,15 +307,13 @@ public class CPU {
     public void spf() {
         sortByNeedTime(processes);
         showProcesses(processes);
-        waitQueue = new ArrayList<>();
-        int running = 0;
         System.out.println("-------------SPF算法-------------");
         if (count <= 0) {
             System.out.println("无可用进程");
             return;
         }
 
-        while (count > 0) {
+        while (flag) {
             for (int i = 0; i < processes.size(); i++) {
                 if (processes.get(i).isReady() && processes.get(i).getArrive_time() == time) {
                     System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(i).getName() + " 到来 ");
@@ -364,12 +352,6 @@ public class CPU {
                 processes.get(running).work(1);
             }
             timePass();
-
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
         System.out.println("---------------------------------");
         showProcesses(processes);
@@ -384,16 +366,13 @@ public class CPU {
     public void psa() {
         sortByPri(processes);
         showProcesses(processes);
-        waitQueue = new ArrayList<>();
-        int front = 0;
-        int running = 0;
         System.out.println("-------------PSA算法-------------");
         if (count <= 0) {
             System.out.println("无可用进程");
             return;
         }
 
-        while (count > 0) {
+        while (flag) {
             for (int i = 0; i < processes.size(); i++) {
                 if (processes.get(i).isReady() && processes.get(i).getArrive_time() == time) {
                     System.out.println("第 " + time + " 秒: " + "进程 " + processes.get(i).getName() + " 到来 ");
@@ -443,14 +422,19 @@ public class CPU {
                 processes.get(running).work(1);
             }
             timePass();
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
         System.out.println("---------------------------------");
         showProcesses(processes);
+    }
+
+    private void timePass() {
+        time++;
+        str_time.setValue(Integer.toString(time));
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public int getNumOfProcesses() {

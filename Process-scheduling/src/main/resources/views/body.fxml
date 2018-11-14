@@ -47,7 +47,7 @@
                         <Cursor fx:constant="HAND"/>
                     </cursor>
                 </JFXRadioButton>
-                <JFXRadioButton fx:id="rr" text="最短剩余时间优先" toggleGroup="$typeGroup">
+                <JFXRadioButton fx:id="rr" text="时间片轮转" toggleGroup="$typeGroup">
                     <cursor>
                         <Cursor fx:constant="HAND"/>
                     </cursor>
