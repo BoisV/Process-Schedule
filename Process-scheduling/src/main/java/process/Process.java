@@ -45,11 +45,6 @@ public class Process {
         this.getPcb().setStatus(status);
     }
 
-
-    public String getName() {
-        return this.getPcb().getName();
-    }
-
     public long getTime() {
         return this.pcb.getNeed_time() - this.getWork_time();
     }

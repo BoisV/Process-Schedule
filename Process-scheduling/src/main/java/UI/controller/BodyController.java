@@ -7,6 +7,9 @@ import io.datafx.controller.ViewController;
 import io.datafx.controller.flow.context.FXMLViewFlowContext;
 import io.datafx.controller.flow.context.ViewFlowContext;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
@@ -49,7 +52,7 @@ public class BodyController {
 
     @PostConstruct
     public void init() {
-        cpu = new CPU(list1,list2,list3);
+        cpu = new CPU(log, list1, list2, list3);
         bindCPUInfoToControls();
 
         start.setOnMouseClicked(event -> {
@@ -58,7 +61,7 @@ public class BodyController {
                 new Thread(cpu::start).start();
                 start.setText("停止");
                 reset.setVisible(false);
-            }else{
+            } else {
                 isBegin = false;
                 new Thread(cpu::stop).start();
                 start.setText("运行");
@@ -125,7 +128,10 @@ public class BodyController {
         numOfWait.textProperty().bind(cpu.numOfWaitProperty());
         numOfEnd.textProperty().bind(cpu.numOfEndProperty());
         time.textProperty().bind(cpu.str_timeProperty());
-        log.textProperty().bind(cpu.logProperty());
+        log.textProperty().addListener((observable, oldValue, newValue) -> {
+            log.selectPositionCaret(log.getLength());
+            log.deselect();
+        });
     }
 
     public static boolean isIsNotFull_1() {

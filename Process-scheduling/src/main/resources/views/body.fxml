@@ -111,8 +111,8 @@
                 <padding>
                     <Insets bottom="20" top="20"/>
                 </padding>
-                <Text >进程调度记录</Text>
-                <TextArea fx:id="log" editable="false" prefHeight="450.0" prefWidth="250.0" />
+                <Text>进程调度记录</Text>
+                <TextArea fx:id="log" editable="false" prefHeight="450.0" prefWidth="250.0"/>
             </VBox>
             <Separator orientation="VERTICAL" prefHeight="200.0"/>
         </HBox>
