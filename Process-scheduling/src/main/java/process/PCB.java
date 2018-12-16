@@ -1,7 +1,6 @@
 package process;
 
 public class PCB {
-
     private String pid;//进程标识符
     private String name;//进程名字
     private long need_time;//所需运行时间

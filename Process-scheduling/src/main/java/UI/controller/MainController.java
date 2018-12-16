@@ -36,7 +36,7 @@ public class MainController {
     public void init() throws FlowException {
         Objects.requireNonNull(context);
         // create the inner flow and content, set the default controller
-        Flow innerFlow = new Flow(AuthorController.class);
+        Flow innerFlow = new Flow(BodyController.class);
 
         final FlowHandler flowHandler = innerFlow.createHandler(context);
         context.register("ContentFlowHandler", flowHandler);

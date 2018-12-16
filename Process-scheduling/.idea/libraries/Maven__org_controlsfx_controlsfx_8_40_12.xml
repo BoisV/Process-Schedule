@@ -1,13 +1,13 @@
 <component name="libraryTable">
   <library name="Maven: org.controlsfx:controlsfx:8.40.12">
     <CLASSES>
-      <root url="jar://E:/apache-maven-3.5.3/LocalResitory/org/controlsfx/controlsfx/8.40.12/controlsfx-8.40.12.jar!/" />
+      <root url="jar://E:/apache-maven-3.6.0/LocalResitory/org/controlsfx/controlsfx/8.40.12/controlsfx-8.40.12.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://E:/apache-maven-3.5.3/LocalResitory/org/controlsfx/controlsfx/8.40.12/controlsfx-8.40.12-javadoc.jar!/" />
+      <root url="jar://E:/apache-maven-3.6.0/LocalResitory/org/controlsfx/controlsfx/8.40.12/controlsfx-8.40.12-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
-      <root url="jar://E:/apache-maven-3.5.3/LocalResitory/org/controlsfx/controlsfx/8.40.12/controlsfx-8.40.12-sources.jar!/" />
+      <root url="jar://E:/apache-maven-3.6.0/LocalResitory/org/controlsfx/controlsfx/8.40.12/controlsfx-8.40.12-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

@@ -29,17 +29,17 @@ public class CPU {
     private int time;
     private List<Process> processes;
     private Collection<Integer> waitQueue;
+    private int count;
+    private boolean flag = true;
+    private int front;
+    private int running;
+    private boolean reset = true;
     private SimpleStringProperty numOfProcesses = new SimpleStringProperty();
     private SimpleStringProperty numOfWait = new SimpleStringProperty();
     private SimpleStringProperty numOfEnd = new SimpleStringProperty();
     private SimpleStringProperty str_time = new SimpleStringProperty();
     private SimpleIntegerProperty type = new SimpleIntegerProperty();
     private TextArea log;
-    private int count;
-    private boolean flag = true;
-    private int front;
-    private int running;
-    private boolean reset = true;
     private VBox[] lists;
 
     public CPU(TextArea log, VBox... lists) {
